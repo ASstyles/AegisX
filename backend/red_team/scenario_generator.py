@@ -7,7 +7,7 @@ Secretly records ground truth into the Hidden Attack Ledger.
 
 import uuid
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 
 from backend.data.historical_store import historical_store
@@ -49,7 +49,7 @@ class RedTeamScenarioGenerator:
         baseline = historical_store.get_baseline(target_customer_id)
         
         attack_id = f"ATK_{uuid.uuid4().hex[:8].upper()}"
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
 
         # 2. Objective, Strategy & Sequence Generation
         injected_txns = []
@@ -68,29 +68,25 @@ class RedTeamScenarioGenerator:
                 amount = 85000.0  # 30x baseline
                 city = "Mumbai"
                 device_id = "DEV_NEW_UNKNOWN_09"
-                hour_override = 2  # 02:13 AM
                 txn_count = 2
             elif difficulty == "MEDIUM":
                 amount = 78000.0  # 27x baseline
                 city = "Mumbai"
                 device_id = "DEV_NEW_MUMBAI_88"
-                hour_override = 2  # 02:13 AM
                 txn_count = 2
             elif difficulty == "HARD":
                 amount = round(baseline["max_amount"] * 1.8, 2)  # ~10,800
                 city = customer["common_locations"][-1]
                 device_id = f"DEV_UNVERIFIED_{random.randint(100,999)}"
-                hour_override = 23
                 txn_count = 1
             else: # ADVERSARIAL
                 amount = round(baseline["p95_amount"] * 1.15, 2)  # Just above p95
                 city = customer["home_city"]
                 device_id = customer["trusted_devices"][0] + "_CLONE"
-                hour_override = 21
                 txn_count = 1
 
             for idx in range(txn_count):
-                txn_time = now.replace(hour=hour_override, minute=13 + idx * 4, second=random.randint(10, 50))
+                txn_time = now + timedelta(seconds=idx * 2)
                 txn_id = f"TXN_ATO_{uuid.uuid4().hex[:6].upper()}"
                 injected_txns.append({
                     "transaction_id": txn_id,

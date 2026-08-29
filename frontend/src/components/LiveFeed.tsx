@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Transaction } from '../types';
 import { Radio, Search, Filter, ShieldAlert, ArrowRight } from 'lucide-react';
+import { formatISTTime } from '../utils/timezone';
 
 interface LiveFeedProps {
   transactions: Transaction[];
@@ -109,7 +110,7 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({
         <table className="soc-table">
           <thead>
             <tr>
-              <th>TIME</th>
+              <th>TIME (IST)</th>
               <th>TXN ID</th>
               <th>CUSTOMER</th>
               <th>AMOUNT</th>
@@ -131,7 +132,7 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({
               filtered.map((t) => {
                 const isBlock = t.decision === 'BLOCK';
                 const isChallenge = t.decision === 'CHALLENGE';
-                const timeStr = t.timestamp ? t.timestamp.split('T')[1]?.substring(0, 8) || t.timestamp : '02:13:00';
+                const timeStr = formatISTTime(t.timestamp);
 
                 return (
                   <tr

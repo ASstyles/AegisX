@@ -80,14 +80,18 @@ class UnsupervisedAnomalyDetector:
         amount = float(txn.get("amount", 0.0))
         mean_amt = baseline.get("mean_amount", 2500.0) if baseline else 2500.0
         
-        # Determine hour
+        # Determine hour in local target timezone (Asia/Kolkata)
         hour = 14
         try:
-            from datetime import datetime
+            from datetime import datetime, timezone
+            from zoneinfo import ZoneInfo
             ts_str = txn.get("timestamp", "")
             if ts_str:
                 dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                hour = dt.hour
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                kolkata_tz = ZoneInfo("Asia/Kolkata")
+                hour = dt.astimezone(kolkata_tz).hour
         except Exception:
             pass
 

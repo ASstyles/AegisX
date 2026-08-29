@@ -44,11 +44,16 @@ def analyze_behavioral_deviation(
     txn_hour = hour_override
     if txn_hour is None:
         try:
-            from datetime import datetime
+            from datetime import datetime, timezone
+            from zoneinfo import ZoneInfo
             ts_str = txn.get("timestamp", "")
             if ts_str:
                 dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                txn_hour = dt.hour
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                kolkata_tz = ZoneInfo("Asia/Kolkata")
+                dt_ist = dt.astimezone(kolkata_tz)
+                txn_hour = dt_ist.hour
         except Exception:
             txn_hour = 14
             
@@ -81,16 +86,18 @@ def analyze_behavioral_deviation(
     if pay_method and typ_methods and pay_method not in typ_methods:
         method_score = 30.0
 
-    # Composite Behavioral Sub-Score with non-linear boost on extreme amount + off-hours
-    raw_behavioral = (
-        amount_score * 0.60 +
-        time_score * 0.25 +
-        cat_score * 0.08 +
-        method_score * 0.07
-    )
-    
-    if amount_score >= 80.0 and is_off_hours:
-        raw_behavioral = min(100.0, raw_behavioral + 15.0)
+    # Composite Behavioral Sub-Score with non-linear scaling on extreme amount surges
+    if amount_score >= 80.0:
+        raw_behavioral = amount_score * 0.85 + (15.0 if is_off_hours else 0.0) + (cat_score * 0.08) + (method_score * 0.07)
+    else:
+        raw_behavioral = (
+            amount_score * 0.60 +
+            time_score * 0.25 +
+            cat_score * 0.08 +
+            method_score * 0.07
+        )
+        if is_off_hours:
+            raw_behavioral = min(100.0, raw_behavioral + 10.0)
 
     composite_subscore = min(100.0, max(0.0, raw_behavioral))
 

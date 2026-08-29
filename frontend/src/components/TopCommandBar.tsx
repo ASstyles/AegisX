@@ -1,6 +1,7 @@
 import React from 'react';
-import { Play, Pause, RotateCcw, Zap, Activity, Flame, Shield, Radio } from 'lucide-react';
+import { Play, Pause, RotateCcw, Zap, Activity, Flame, Shield, Radio, Timer } from 'lucide-react';
 import { SimulationStatus } from '../types';
+import { formatDurationSeconds } from '../utils/timezone';
 
 interface TopCommandBarProps {
   status: SimulationStatus;
@@ -10,6 +11,7 @@ interface TopCommandBarProps {
   onDemo: () => void;
   onConfigChange: (key: string, value: any) => void;
   isDemoRunning?: boolean;
+  demoSecondsRemaining?: number;
 }
 
 export const TopCommandBar: React.FC<TopCommandBarProps> = ({
@@ -19,7 +21,8 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
   onReset,
   onDemo,
   onConfigChange,
-  isDemoRunning
+  isDemoRunning = false,
+  demoSecondsRemaining = 120
 }) => {
   return (
     <header className="soc-topbar">
@@ -132,12 +135,20 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
 
           <button
             onClick={onDemo}
-            disabled={isDemoRunning}
-            className="soc-btn soc-btn-demo"
-            title="Run 2-Minute Deterministic Judge Walkthrough"
+            className={`soc-btn ${isDemoRunning ? 'soc-btn-amber' : 'soc-btn-demo'}`}
+            title={isDemoRunning ? 'Click to Cancel 2-Minute Demo' : 'Run 2-Minute Deterministic Judge Walkthrough'}
           >
-            <Zap style={{ width: 14, height: 14, fill: '#FFD700', color: '#FFD700' }} />
-            <span>{isDemoRunning ? 'RUNNING...' : '2-MIN DEMO'}</span>
+            {isDemoRunning ? (
+              <>
+                <Timer style={{ width: 14, height: 14, color: '#f59e0b' }} className="pulse-dot" />
+                <span>DEMO: {formatDurationSeconds(demoSecondsRemaining)}</span>
+              </>
+            ) : (
+              <>
+                <Zap style={{ width: 14, height: 14, fill: '#FFD700', color: '#FFD700' }} />
+                <span>2-MIN DEMO</span>
+              </>
+            )}
           </button>
         </div>
       </div>

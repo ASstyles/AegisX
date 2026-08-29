@@ -1,6 +1,7 @@
 import React from 'react';
-import { Play, Pause, RotateCcw, Zap, Shield, Flame, Activity } from 'lucide-react';
+import { Play, Pause, RotateCcw, Zap, Shield, Flame, Activity, Timer } from 'lucide-react';
 import { SimulationStatus } from '../types';
+import { formatDurationSeconds } from '../utils/timezone';
 
 interface ControlBarProps {
   status: SimulationStatus;
@@ -10,6 +11,7 @@ interface ControlBarProps {
   onDemo: () => void;
   onConfigChange: (key: string, value: any) => void;
   isDemoRunning?: boolean;
+  demoSecondsRemaining?: number;
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
@@ -19,7 +21,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onReset,
   onDemo,
   onConfigChange,
-  isDemoRunning
+  isDemoRunning = false,
+  demoSecondsRemaining = 120
 }) => {
   return (
     <header className="glass-header sticky top-0 z-50 px-6 py-3 border-b border-[var(--border-subtle)]">
@@ -91,12 +94,20 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           {/* 2-Min Demo Walkthrough */}
           <button
             onClick={onDemo}
-            disabled={isDemoRunning}
             className="btn btn-purple"
-            title="Run 2-Minute End-to-End Judge Walkthrough"
+            title={isDemoRunning ? 'Cancel 2-Minute Demo' : 'Run 2-Minute End-to-End Judge Walkthrough'}
           >
-            <Zap className="w-4 h-4 fill-yellow-300 text-yellow-300" />
-            <span>{isDemoRunning ? 'Running Demo...' : '2-Min Demo Mode'}</span>
+            {isDemoRunning ? (
+              <>
+                <Timer className="w-4 h-4 text-amber-400 animate-pulse" />
+                <span>Demo: {formatDurationSeconds(demoSecondsRemaining)}</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 fill-yellow-300 text-yellow-300" />
+                <span>2-Min Demo Mode</span>
+              </>
+            )}
           </button>
 
           <div className="h-6 w-px bg-slate-700 mx-1 hidden sm:block" />

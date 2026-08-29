@@ -5,7 +5,7 @@ Tracks short-term burst transactions, frequency spikes, micro-charge card testin
 
 from typing import Dict, List, Any, Tuple
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 class VelocityTracker:
     def __init__(self, window_seconds: int = 300):
@@ -23,13 +23,15 @@ class VelocityTracker:
         merchant_id = txn.get("merchant_id", "UNKNOWN")
         
         # Parse timestamp
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         ts_str = txn.get("timestamp")
         if ts_str:
             try:
                 now = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                if now.tzinfo is None:
+                    now = now.replace(tzinfo=timezone.utc)
             except Exception:
-                pass
+                now = datetime.now(timezone.utc)
 
         if customer_id not in self.customer_history:
             self.customer_history[customer_id] = deque()

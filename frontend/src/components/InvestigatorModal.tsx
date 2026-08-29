@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transaction } from '../types';
 import { X, ShieldAlert, ShieldCheck, CheckCircle2, AlertTriangle, PlayCircle, History, Sparkles, Terminal } from 'lucide-react';
+import { formatISTTime, formatISTDateTime } from '../utils/timezone';
 
 interface InvestigatorModalProps {
   transaction: Transaction | null;
@@ -18,6 +19,8 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
   const baseline = transaction.customer_baseline;
   const isBlock = transaction.decision === 'BLOCK';
   const isChallenge = transaction.decision === 'CHALLENGE';
+  const meanAmt = baseline?.mean_amount || 2500;
+  const amtMultiple = (transaction.amount / meanAmt).toFixed(1);
 
   const riskAttribution = transaction.risk_attribution || {
     'Behavioral Deviation': 38.0,
@@ -29,9 +32,13 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
     'Unsupervised ML Anomaly': 16.0
   };
 
-  const xaiReasons = transaction.xai?.reasons || [
-    `Transaction amount (₹${transaction.amount.toLocaleString()}) is 28.7× higher than customer's historical mean.`,
-    `Transaction initiated at ${transaction.timestamp?.split('T')[1]?.substring(0, 5) || '02:13'} outside normal hours (09:00 - 22:00).`,
+  const formattedTime = formatISTTime(transaction.timestamp);
+  const formattedFull = formatISTDateTime(transaction.timestamp);
+  const isOffHours = transaction.layer_details?.behavioral?.is_off_hours;
+
+  const xaiReasons = transaction.xai?.reasons && transaction.xai.reasons.length > 0 ? transaction.xai.reasons : [
+    `Transaction amount (₹${transaction.amount.toLocaleString()}) is ${amtMultiple}× higher than customer's historical mean.`,
+    `Transaction initiated at ${formattedTime} IST ${isOffHours ? 'outside normal hours' : 'during customer activity window'} (${baseline?.normal_hours ? `${baseline.normal_hours[0]}:00 – ${baseline.normal_hours[1]}:00` : '09:00 – 22:00'}).`,
     `Device '${transaction.device_id}' is completely unverified for account ${transaction.customer_id}.`,
     `Geographic origin (${transaction.city}) deviates from registered home location (${baseline?.home_city || 'Pune'}).`
   ];
@@ -114,11 +121,11 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Attempt Amount:</span>
-                  <span style={{ color: 'var(--red)', fontWeight: 700 }}>₹{transaction.amount.toLocaleString()} (28.7× Surge)</span>
+                  <span style={{ color: 'var(--red)', fontWeight: 700 }}>₹{transaction.amount.toLocaleString()} ({amtMultiple}× Surge)</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Timestamp:</span>
-                  <span style={{ color: 'var(--amber)', fontWeight: 700 }}>02:13 AM (Off-hours)</span>
+                  <span style={{ color: 'var(--amber)', fontWeight: 700 }}>{formattedTime} IST {isOffHours ? '(Off-hours)' : ''}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Device Fingerprint:</span>

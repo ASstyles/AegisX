@@ -5,7 +5,7 @@ MUST NEVER be accessed by Blue Team during real-time inference.
 """
 
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class HiddenAttackLedger:
     def __init__(self):
@@ -38,7 +38,7 @@ class HiddenAttackLedger:
             "injected_transaction_ids": injected_transaction_ids,
             "injected_count": len(injected_transaction_ids),
             "ground_truth": "FRAUD",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "parameters": parameters or {},
             "status": "ACTIVE"
         }

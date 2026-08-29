@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Flame, ShieldAlert, Target, Zap, Cpu, Sparkles, Check, Layers, AlertOctagon, Terminal } from 'lucide-react';
 import { CustomerProfile } from '../types';
 import { launchAttack } from '../api/client';
+import { formatISTTime } from '../utils/timezone';
 
 interface AttackLabProps {
   customers: CustomerProfile[];
@@ -124,7 +125,7 @@ export const AttackLab: React.FC<AttackLabProps> = ({ customers, onAttackLaunche
       const msg = `Injected '${selectedAttack}' against ${targetName} (${targetCustomer}) [${difficulty}]`;
       setLaunchSuccess(msg);
       setActivityLogs((prev) => [
-        `[${new Date().toLocaleTimeString()}] Red Team: Synthesized & injected '${selectedAttack}' targeting ${targetName}`,
+        `[${formatISTTime(new Date().toISOString())}] Red Team: Synthesized & injected '${selectedAttack}' targeting ${targetName}`,
         ...prev.slice(0, 8)
       ]);
       onAttackLaunched(selectedAttack, targetName);

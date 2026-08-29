@@ -70,7 +70,7 @@ def root():
 @app.get("/api/health")
 def health_check():
     return {
-        "status": "healthy",
+        "status": "ok",
         "service": "AegisX",
         "defense_version": defense_adaptation_engine.defense_version
     }

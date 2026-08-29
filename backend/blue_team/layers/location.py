@@ -4,7 +4,7 @@ Computes geographic distance, home/common location divergence, and impossible tr
 """
 
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Tuple, Optional
 from backend.data.generator import CITY_COORDINATES
 
@@ -68,6 +68,10 @@ def analyze_location_intelligence(
             try:
                 t1 = datetime.fromisoformat(last_time_str.replace("Z", "+00:00"))
                 t2 = datetime.fromisoformat(current_time_str.replace("Z", "+00:00"))
+                if t1.tzinfo is None:
+                    t1 = t1.replace(tzinfo=timezone.utc)
+                if t2.tzinfo is None:
+                    t2 = t2.replace(tzinfo=timezone.utc)
                 time_diff_hours = abs((t2 - t1).total_seconds()) / 3600.0
 
                 if time_diff_hours > 0:

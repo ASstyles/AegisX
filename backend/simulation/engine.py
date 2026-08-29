@@ -7,7 +7,7 @@ evaluates in real-time via Blue Team, and broadcasts live telemetry over WebSock
 import asyncio
 import random
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional, Set
 from collections import deque
 
@@ -140,7 +140,7 @@ class SimulationEngine:
             "merchant_id": merchant["merchant_id"],
             "merchant_category": merchant["category"],
             "merchant_name": merchant["merchant_name"],
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "city": city,
             "country": "India",
             "device_id": device_id,

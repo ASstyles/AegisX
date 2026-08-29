@@ -5,7 +5,7 @@ Strictly receives NO fraud labels, attack IDs, or Red Team ground truth.
 """
 
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.data.historical_store import historical_store
 from backend.blue_team.layers.behavioral import analyze_behavioral_deviation
@@ -114,7 +114,7 @@ class BlueTeamPipeline:
         if decision != "BLOCK" and city:
             self.last_known_locations[customer_id] = {
                 "city": city,
-                "timestamp": sanitized_txn.get("timestamp", datetime.now().isoformat())
+                "timestamp": sanitized_txn.get("timestamp", datetime.now(timezone.utc).isoformat())
             }
 
         # Assessment package for frontend and evaluation

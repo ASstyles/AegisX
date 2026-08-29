@@ -22,9 +22,11 @@ import {
   fetchScoreboard,
   adaptDefense,
   replayAttack,
+  launchAttack,
   runFirstMVP,
   createStreamWebSocket
 } from './api/client';
+import { formatISTTime } from './utils/timezone';
 
 import { Sidebar } from './components/Sidebar';
 import { TopCommandBar } from './components/TopCommandBar';
@@ -63,10 +65,13 @@ export function App() {
   const [investigatingTxn, setInvestigatingTxn] = useState<Transaction | null>(null);
   const [replayData, setReplayData] = useState<ReplayData | null>(null);
   const [isDemoRunning, setIsDemoRunning] = useState<boolean>(false);
+  const [demoSecondsRemaining, setDemoSecondsRemaining] = useState<number>(120);
   const [isAdapting, setIsAdapting] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'alert' | 'info' } | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const demoIntervalRef = useRef<any>(null);
+  const demoStartTimeRef = useRef<Date | null>(null);
 
   const showToast = (text: string, type: 'success' | 'alert' | 'info' = 'info') => {
     setToastMessage({ text, type });
@@ -111,7 +116,8 @@ export function App() {
           }
 
           if (newTxn.decision === 'BLOCK') {
-            showToast(`AUTONOMOUS BLOCK: ₹${newTxn.amount.toLocaleString()} at ${newTxn.city} (Risk: ${newTxn.risk_score})`, 'alert');
+            const timeStr = formatISTTime(newTxn.timestamp);
+            showToast(`AUTONOMOUS BLOCK [${timeStr} IST]: ₹${newTxn.amount.toLocaleString()} at ${newTxn.city} (Risk: ${newTxn.risk_score})`, 'alert');
           }
         } else if (event.type === 'INITIAL_STATE') {
           setStatus(event.status);
@@ -125,6 +131,9 @@ export function App() {
 
     return () => {
       ws.close();
+      if (demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current);
+      }
     };
   }, []);
 
@@ -142,6 +151,14 @@ export function App() {
   };
 
   const handleReset = async () => {
+    if (demoIntervalRef.current) {
+      clearInterval(demoIntervalRef.current);
+      demoIntervalRef.current = null;
+    }
+    setIsDemoRunning(false);
+    setDemoSecondsRemaining(120);
+    demoStartTimeRef.current = null;
+
     await resetSimulation();
     setTransactions([]);
     setEvaluation(null);
@@ -186,31 +203,97 @@ export function App() {
     }
   };
 
-  // 2-Minute Deterministic Judge Walkthrough Flow
+  // 2-Minute Orchestrated Real-Time Demo Walkthrough Flow
   const handleRunDemo = async () => {
-    setIsDemoRunning(true);
-    showToast('Starting 2-Minute Mastercard / GFF 2026 Judge Walkthrough...', 'info');
-
-    try {
-      const mvp = await runFirstMVP();
-      setActiveTab('DASHBOARD');
-      const updatedTxns = await fetchLiveTransactions(50);
-      setTransactions(updatedTxns);
-      const updatedStatus = await fetchStatus();
-      setStatus(updatedStatus);
-
-      const blockedTxn = updatedTxns.find((t) => t.decision === 'BLOCK') || updatedTxns[0];
-      if (blockedTxn) {
-        setInvestigatingTxn(blockedTxn);
+    if (isDemoRunning) {
+      // User cancelled active demo
+      if (demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current);
+        demoIntervalRef.current = null;
       }
-
-      showToast('Step 1 Complete: Account Takeover (₹78k surge, Mumbai, 02:13 AM) blocked by Blue Team!', 'success');
-    } catch (e) {
-      console.error(e);
-      showToast('Demo execution error', 'alert');
-    } finally {
       setIsDemoRunning(false);
+      setDemoSecondsRemaining(120);
+      demoStartTimeRef.current = null;
+      await pauseSimulation();
+      showToast('2-Minute Demo cancelled by user', 'info');
+      return;
     }
+
+    // Start 2-Minute Demo Flow
+    demoStartTimeRef.current = new Date();
+    setIsDemoRunning(true);
+    setDemoSecondsRemaining(120);
+    setActiveTab('DASHBOARD');
+
+    // Ensure simulation is running with fresh transactions
+    await startSimulation();
+    setStatus((prev) => ({ ...prev, is_running: true }));
+    showToast(`Starting 2-Minute Live Demo at ${formatISTTime(new Date().toISOString())} IST — generating real-time traffic with Red Team attack injections!`, 'info');
+
+    // Step 1: Immediate Priya Sharma ATO attack injection at start
+    setTimeout(async () => {
+      try {
+        await launchAttack('ACCOUNT_TAKEOVER', 'C001', 'MEDIUM', 'HIGH');
+        showToast('Demo Step 1: Red Team injected Account Takeover on Priya Sharma (C001, ₹78k, Mumbai)!', 'alert');
+      } catch (e) {
+        console.error(e);
+      }
+    }, 4000);
+
+    let remaining = 120;
+    demoIntervalRef.current = setInterval(async () => {
+      remaining -= 1;
+      setDemoSecondsRemaining(remaining);
+
+      // Milestone injections
+      if (remaining === 90) {
+        // 30s in: Card testing bot flood
+        try {
+          await launchAttack('CARD_TESTING', 'C002', 'MEDIUM', 'HIGH');
+          showToast('Demo Step 2: Red Team launched Card Testing Bot Micro-charge Flood!', 'alert');
+        } catch (e) {
+          console.error(e);
+        }
+      } else if (remaining === 60) {
+        // 60s in: Velocity burst
+        try {
+          await launchAttack('VELOCITY_ATTACK', 'C004', 'MEDIUM', 'HIGH');
+          showToast('Demo Step 3: Red Team unleashed High-Velocity Draining Burst!', 'alert');
+        } catch (e) {
+          console.error(e);
+        }
+      } else if (remaining === 30) {
+        // 90s in: Adversarial behavior mimicry
+        try {
+          await launchAttack('BEHAVIOR_MIMICRY', 'C001', 'HARD', 'HIGH');
+          showToast('Demo Step 4: Red Team launched Adversarial Statistical Mimicry Attack!', 'alert');
+        } catch (e) {
+          console.error(e);
+        }
+      } else if (remaining <= 0) {
+        // Demo complete!
+        clearInterval(demoIntervalRef.current);
+        demoIntervalRef.current = null;
+        setIsDemoRunning(false);
+        setDemoSecondsRemaining(120);
+
+        try {
+          await pauseSimulation();
+          setStatus((prev) => ({ ...prev, is_running: false }));
+
+          // Reveal Hidden Ground Truth Evaluation
+          const evalResult = await evaluateSimulation();
+          setEvaluation(evalResult);
+          const newScoreboard = await fetchScoreboard();
+          setScoreboard(newScoreboard);
+
+          setActiveTab('EVALUATION');
+          showToast('2-Minute Demo Complete! Hidden Ground Truth revealed: Confusion Matrix & Metrics evaluated.', 'success');
+        } catch (e) {
+          console.error('Demo completion evaluation error', e);
+        }
+      }
+    }, 1000);
   };
 
   const handleSelectTab = (tab: string) => {
@@ -248,6 +331,7 @@ export function App() {
           onDemo={handleRunDemo}
           onConfigChange={handleConfigChange}
           isDemoRunning={isDemoRunning}
+          demoSecondsRemaining={demoSecondsRemaining}
         />
 
         {/* Page Content Container */}

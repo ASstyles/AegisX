@@ -18,15 +18,18 @@ FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
+    TZ=Asia/Kolkata \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /app
 
-# Install Nginx, envsubst (gettext-base), and dos2unix for line ending normalization
+# Install Nginx, envsubst (gettext-base), tzdata, curl, and dos2unix for line ending normalization
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         nginx \
         gettext-base \
+        tzdata \
+        curl \
         dos2unix && \
     rm -rf /var/lib/apt/lists/*
 

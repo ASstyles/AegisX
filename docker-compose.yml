@@ -1,0 +1,50 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: aegisx-backend
+    environment:
+      - TZ=Asia/Kolkata
+      - PYTHONUNBUFFERED=1
+      - SIMULATION_TPS=${SIMULATION_TPS:-2.0}
+      - DEFAULT_CONTAMINATION_RATE=${DEFAULT_CONTAMINATION_RATE:-0.02}
+      - DEMO_DURATION_SECONDS=${DEMO_DURATION_SECONDS:-120}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - aegisx-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: aegisx-frontend
+    environment:
+      - TZ=Asia/Kolkata
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - aegisx-network
+
+networks:
+  aegisx-network:
+    name: aegisx-network
+    driver: bridge

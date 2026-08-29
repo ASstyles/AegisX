@@ -6,7 +6,7 @@ Builds statistical baselines for Blue Team behavioral deviation detection.
 
 import math
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 import numpy as np
 
@@ -32,7 +32,7 @@ class HistoricalStore:
         Generates 60 days of normal, consistent historical transactions for all customers.
         """
         random.seed(self.seed + 101)
-        base_time = datetime.now() - timedelta(days=60)
+        base_time = datetime.now(timezone.utc) - timedelta(days=60)
         
         merchants_by_cat: Dict[str, List[Dict[str, Any]]] = {}
         for m in self.merchants.values():

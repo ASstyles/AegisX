@@ -7,6 +7,7 @@ import {
   ForensicEvidenceItem,
   DynamicInvestigationMetrics
 } from '../types';
+import { formatISTTime, formatISTDateTime } from './timezone';
 
 /**
  * Builds full directed graph, node statistics, risk scores, and metrics
@@ -256,13 +257,13 @@ export function buildForensicGraph(
     recoverableAmount: recoverableAmount > 0 ? recoverableAmount : Math.round(primaryTxn.amount * 0.6),
     riskScore: incidentRisk,
     status: incidentRisk >= 75 ? 'CHAIN_CONTAINED' : 'UNDER_INVESTIGATION',
-    detectionTime: primaryTxn.timestamp ? primaryTxn.timestamp.split('T')[1]?.slice(0, 8) || '19:42:18' : '19:42:18',
+    detectionTime: formatISTTime(primaryTxn.timestamp),
     countdownSeconds: 85940, // ~23:52:20
     accountsInvolved: nodes.length,
     transactionsTraced: rawTransactions.length,
     chainDepth: maxLevel + 1,
     evidenceHash: generateSha256Hash(rawTransactions),
-    evidenceCollectedAt: `${primaryTxn.timestamp ? primaryTxn.timestamp.split('T')[1]?.slice(0, 8) : '19:42:31'} IST`,
+    evidenceCollectedAt: `${formatISTTime(primaryTxn.timestamp)} IST`,
     investigatorAssigned: 'DFIR Specialist (Assigned)',
     customerNotificationSent: true,
     customerResponseStatus: 'PENDING',
@@ -523,7 +524,7 @@ function generateDynamicTimeline(
   incident: ForensicIncident,
   nodes: ForensicAccountNode[]
 ): ForensicTimelineEvent[] {
-  const baseTime = primaryTxn.timestamp ? primaryTxn.timestamp.split('T')[1]?.slice(0, 8) || '19:42:18' : '19:42:18';
+  const baseTime = formatISTTime(primaryTxn.timestamp);
 
   return [
     {
@@ -590,7 +591,7 @@ function generateDynamicEvidence(
   incident: ForensicIncident,
   nodes: ForensicAccountNode[]
 ): ForensicEvidenceItem[] {
-  const time = primaryTxn.timestamp ? primaryTxn.timestamp.split('T')[1]?.slice(0, 8) || '19:42:18' : '19:42:18';
+  const time = formatISTTime(primaryTxn.timestamp);
 
   return [
     {

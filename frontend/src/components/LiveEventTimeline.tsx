@@ -1,6 +1,7 @@
 import React from 'react';
 import { Radio, AlertOctagon, Shield, Lock, Activity, Flame } from 'lucide-react';
 import { Transaction } from '../types';
+import { formatISTTime } from '../utils/timezone';
 
 interface LiveEventTimelineProps {
   transactions: Transaction[];
@@ -28,7 +29,7 @@ export const LiveEventTimeline: React.FC<LiveEventTimelineProps> = ({ transactio
           threatTxns.map((t, idx) => (
             <React.Fragment key={t.transaction_id + idx}>
               <div className="flex items-center gap-2 text-[10px] text-slate-300 py-0.5 border-b border-slate-900/60">
-                <span className="text-slate-500">{new Date(t.timestamp).toLocaleTimeString()}</span>
+                <span className="text-slate-500">{formatISTTime(t.timestamp)}</span>
                 <span className="text-red-400 font-bold flex items-center gap-1">
                   <Flame className="w-2.5 h-2.5 text-red-400" />
                   Red Team Injected {t.amount > 50000 ? 'ATO Surge' : 'Anomaly'} ({t.customer_id})
