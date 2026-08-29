@@ -9,8 +9,16 @@ import {
   GraphData
 } from '../types';
 
-const API_BASE = 'http://localhost:8000';
-const WS_BASE = 'ws://localhost:8000/ws/stream';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+
+export function getWebSocketUrl(): string {
+  if (import.meta.env.VITE_WS_BASE) {
+    return import.meta.env.VITE_WS_BASE;
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  return `${protocol}//${host}/ws/stream`;
+}
 
 export async function fetchStatus(): Promise<SimulationStatus> {
   const res = await fetch(`${API_BASE}/status`);
@@ -121,7 +129,8 @@ export function createStreamWebSocket(
   onOpen?: () => void,
   onClose?: () => void
 ): WebSocket {
-  const ws = new WebSocket(WS_BASE);
+  const wsUrl = getWebSocketUrl();
+  const ws = new WebSocket(wsUrl);
   ws.onopen = () => onOpen && onOpen();
   ws.onclose = () => onClose && onClose();
   ws.onmessage = (msg) => {

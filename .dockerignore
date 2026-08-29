@@ -1,0 +1,29 @@
+# Git and IDE
+.git
+.gitignore
+.gemini
+.vscode
+.idea
+
+# Node / Frontend
+frontend/node_modules
+frontend/dist
+frontend/.vite-temp
+*.log
+npm-debug.log*
+
+# Python / Backend
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.sqlite3
+
+# Documentation and temporary
+docs/
+scratch/

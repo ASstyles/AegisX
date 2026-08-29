@@ -66,6 +66,16 @@ def root():
         "defense_version": defense_adaptation_engine.defense_version
     }
 
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "AegisX",
+        "defense_version": defense_adaptation_engine.defense_version
+    }
+
+
 # 1. Simulation Controls
 @app.get("/status")
 async def get_status():
