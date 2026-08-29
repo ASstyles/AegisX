@@ -1,49 +1,56 @@
 #!/bin/sh
-set -e
+set -eu
 
-# Default to port 10000 if PORT is not set (Render provides $PORT)
-export PORT=${PORT:-10000}
-echo "========================================="
-echo "Starting AegisX Unified Service on Port $PORT"
-echo "========================================="
+PORT="${PORT:-10000}"
 
-# Substitute $PORT into Nginx configuration
-if command -v envsubst > /dev/null 2>&1; then
-    envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
-else
-    sed "s/\${PORT}/${PORT}/g" /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
-fi
+echo "========================================"
+echo "Starting AegisX Unified Service on Port ${PORT}"
+echo "========================================"
 
-# Remove default sites-available/sites-enabled symlinks if present to prevent port collisions
-rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
+# Export PYTHONPATH so app imports resolve regardless of working directory
+export PYTHONPATH="/app:${PYTHONPATH:-}"
 
-# Validate Nginx configuration
+# Generate nginx configuration
+envsubst '${PORT}' < /app/nginx.conf > /etc/nginx/nginx.conf
+
+# Validate nginx
 nginx -t
 
-# Start FastAPI backend with Uvicorn on 127.0.0.1:8000
 echo "Starting Uvicorn backend server on 127.0.0.1:8000..."
-uvicorn backend.app:app --host 127.0.0.1 --port 8000 &
-BACKEND_PID=$!
 
-# Trap termination signals to gracefully stop backend and nginx
-shutdown() {
-    echo "Shutting down AegisX services..."
-    kill -TERM "$BACKEND_PID" 2>/dev/null || true
-    exit 0
-}
-trap shutdown SIGTERM SIGINT
+cd /app/backend
 
-# Wait briefly for FastAPI to initialize
+uvicorn app:app --host 127.0.0.1 --port 8000 &
+UVICORN_PID=$!
+
+# Give Uvicorn a moment to start
 sleep 2
 
-# Check if backend started properly
-if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
-    echo "FATAL: FastAPI backend failed to start!"
+# Verify Uvicorn is still running
+if ! kill -0 "$UVICORN_PID" 2>/dev/null; then
+    echo "ERROR: Uvicorn failed to start"
     exit 1
 fi
 
-echo "FastAPI backend started successfully (PID: $BACKEND_PID)."
-echo "Starting Nginx reverse proxy on 0.0.0.0:$PORT..."
+echo "Uvicorn started successfully with PID ${UVICORN_PID}"
+echo "Starting Nginx..."
 
-# Start Nginx in foreground
-exec nginx -g "daemon off;"
+cleanup() {
+    echo "Stopping AegisX services..."
+    kill "$UVICORN_PID" 2>/dev/null || true
+    wait "$UVICORN_PID" 2>/dev/null || true
+}
+
+# IMPORTANT:
+# Use numeric POSIX signal numbers instead of SIGTERM/SIGINT
+# because the current environment is reporting:
+# trap: SIGTERM: bad trap
+
+trap cleanup 15 2
+
+# Nginx must remain in the foreground
+nginx -g "daemon off;"
+
+# If nginx exits, clean up Uvicorn
+cleanup
+exit 0

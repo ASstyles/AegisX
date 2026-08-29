@@ -17,6 +17,7 @@ RUN npm run build
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /app
@@ -40,14 +41,14 @@ COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Copy Nginx template configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+COPY nginx.conf /app/nginx.conf
 
 # Copy and configure entrypoint script
-COPY entrypoint.sh ./entrypoint.sh
-RUN dos2unix ./entrypoint.sh && chmod +x ./entrypoint.sh
+COPY entrypoint.sh /app/entrypoint.sh
+RUN dos2unix /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Default Render port exposure (Render overrides dynamically via $PORT)
 EXPOSE 10000
 
 # Start Uvicorn backend + Nginx reverse proxy
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
